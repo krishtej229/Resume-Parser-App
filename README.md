@@ -22,7 +22,6 @@ An intelligent and easy-to-use **Resume Parser Web App** built using **Python (F
 - **Backend:** Python, Flask
 - **Frontend:** HTML, CSS (Inter/Roboto fonts), JavaScript
 - **PDF Parsing:** PyPDF2
-- **Excel/CSV Export:** pandas, io
 - **Resume Scoring:** Simple rule-based scoring logic (can be expanded with NLP/LLM later)
 
 ---
