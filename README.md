@@ -13,10 +13,6 @@ An intelligent and easy-to-use **Resume Parser Web App** built using **Python (F
   - LinkedIn, GitHub, Skills
   - Education, Projects, Achievements
 - 🔢 Basic AI Resume Score (custom logic)
-- 📥 Download parsed output as:
-  - JSON
-  - CSV
-  - Excel
 - 🎨 Clean, modern UI (dark mode + animation)
 
 ---
