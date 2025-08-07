@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resume Parser App</title>
+
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for cloud icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="container">
+    <h1>Resume Parser App</h1>
+
+    <!-- Upload / Paste Form -->
+    <div class="card">
+      <form action="/" method="post" enctype="multipart/form-data">
+        
+        <!-- Drag-and-drop upload box -->
+        <label for="resume_file" class="upload-box" id="uploadBox">
+          <i class="fas fa-cloud-upload-alt fa-2x"></i>
+          <p>Drag & drop your resume here or click to select</p>
+          <input type="file" name="resume_file" id="resume_file" accept=".pdf,.txt" hidden>
+          <div id="fileName" class="file-name">No file selected</div>
+          <button type="button" id="removeFileBtn" style="display: none; margin-top: 5px;">Remove File</button>
+        </label>
+
+        <!-- Paste Resume Text -->
+        <label>Or paste resume text</label>
+        <textarea id="resume_text" name="resume_text" placeholder="Paste resume here..."></textarea>
+
+        <!-- Submit -->
+        <button type="submit">Parse Resume</button>
+      </form>
+    </div>
+
+    <!-- Parsed result -->
+    {% if parsed %}
+    <div class="card parsed-summary" id="parsedSummary">
+    <div class="card">
+      <h2><strong>Parsed Summary</strong></h2>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <strong>NAME</strong>
+          <div class="value">{{ parsed.name or '-' }}</div>
+        </div>
+
+        <div class="summary-item">
+          <strong>EMAIL</strong>
+          <div class="value">
+            {% if parsed.email %}
+              <a href="mailto:{{ parsed.email }}">{{ parsed.email }}</a>
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <strong>PHONE</strong>
+          <div class="value">
+            {% if parsed.phone and parsed.phone|length > 5 %}
+              <a href="tel:{{ parsed.phone }}">{{ parsed.phone }}</a>
+            {% else %}
+              <span class="muted">Not detected</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <strong>LINKEDIN</strong>
+          <div class="value">
+            {% if parsed.linkedin %}
+              <a href="{{ parsed.linkedin }}" target="_blank" rel="noopener">{{ parsed.linkedin }}</a>
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="summary-item">
+          <strong>GITHUB</strong>
+          <div class="value">
+            {% if parsed.github %}
+              <a href="{{ parsed.github }}" target="_blank" rel="noopener">{{ parsed.github }}</a>
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Education -->
+      <h3><strong>EDUCATION</strong></h3>
+      {% if parsed.education and parsed.education|length > 0 %}
+      <ul class="plain-list">
+        {% for edu in parsed.education %}
+          <li>{{ edu }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="muted">No education section detected.</p>
+      {% endif %}
+
+      <!-- Projects -->
+      <h3><strong>PROJECTS</strong></h3>
+      {% if parsed.projects and parsed.projects|length > 0 %}
+      <ul class="plain-list">
+        {% for proj in parsed.projects %}
+          <li>{{ proj }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="muted">No projects detected.</p>
+      {% endif %}
+
+      <!-- Skills -->
+      <h3><strong>SKILLS</strong></h3>
+      {% if parsed.skills and parsed.skills|length > 0 %}
+      <ul class="chips-list">
+        {% for skill in parsed.skills %}
+          <li class="chip">{{ skill }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="muted">No skills detected.</p>
+      {% endif %}
+
+      <!-- Achievements -->
+      <h3><strong>ACHIEVEMENTS</strong></h3>
+      {% if parsed.achievements and parsed.achievements|length > 0 %}
+      <ul class="plain-list">
+        {% for ach in parsed.achievements %}
+          <li>{{ ach }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="muted">No achievements detected.</p>
+      {% endif %}
+
+      <!-- Raw Links -->
+      <h3><strong>RAW LINKS</strong></h3>
+      {% if parsed.raw_links and parsed.raw_links|length > 0 %}
+      <ul class="plain-list">
+        {% for link in parsed.raw_links %}
+            {% if link.startswith('tel:') %}
+                <li>{{ link }}</li>
+            {% elif link.startswith('mailto:') %}
+                <li>email: {{ link[7:] }}</li>
+            {% else %}
+                <li><a href="{{ link }}" target="_blank" rel="noopener">{{ link }}</a></li>
+            {% endif %}
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="muted">No links detected.</p>
+      {% endif %}
+    </div>
+    <!-- AI Resume Score Card -->
+    <div class="card">
+      <h2 style="margin-top: 0;">AI Resume Score</h2>
+      <p style="font-size: 1.2rem; font-weight: bold;">
+        Score: {{ parsed.ai_resume_score }} / 100
+      </p>
+
+      <!-- Optional: Visual progress bar -->
+      <div style="background: #e0e0e0; height: 10px; border-radius: 10px; overflow: hidden; margin-top: 10px;">
+        <div style="height: 100%; width: {{ parsed.ai_resume_score }}%; background: {% if parsed.ai_resume_score >= 75 %}#4caf50{% elif parsed.ai_resume_score >= 50 %}#ffc107{% else %}#f44336{% endif %};"></div>
+      </div>
+
+      <!-- Optional: Feedback text -->
+      <p style="margin-top: 10px;">
+        {% if parsed.ai_resume_score >= 85 %}
+          Excellent resume! ✅
+        {% elif parsed.ai_resume_score >= 65 %}
+          Good resume, but some improvements can be made. 🛠️
+        {% else %}
+          Needs improvement. Add more skills, education, or projects. 🚧
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Drag & drop JS -->
+  <script>
+  const uploadBox = document.getElementById('uploadBox');
+  const fileInput = document.getElementById('resume_file');
+  const fileNameDisplay = document.getElementById('fileName');
+  const removeFileBtn = document.getElementById('removeFileBtn');
+  const resumeText = document.getElementById('resume_text');
+
+  function enableTextArea(enable) {
+    resumeText.disabled = !enable;
+  }
+
+  function clearFileSelection() {
+    fileInput.value = '';
+    fileNameDisplay.textContent = "No file selected";
+    removeFileBtn.style.display = "none";
+    enableTextArea(true);
+    fileInput.disabled = false;
+  }
+
+  // Prevent browser from opening file if dropped outside the upload box
+  window.addEventListener("dragover", function(e) {
+    e.preventDefault();
+  });
+
+  window.addEventListener("drop", function(e) {
+    e.preventDefault();
+  });
+
+
+  uploadBox.addEventListener('dragover', (e) => {
+    if (fileInput.disabled) return;
+    e.preventDefault();
+    uploadBox.classList.add('hover');
+  });
+
+  uploadBox.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (!fileInput.disabled) {
+    uploadBox.classList.add('hover');
+  }
+  });
+
+  uploadBox.addEventListener('dragleave', () => {
+    uploadBox.classList.remove('hover');
+  });
+
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove('hover');
+    if (!fileInput.disabled && e.dataTransfer.files.length > 0) {
+      fileInput.files = e.dataTransfer.files;
+      fileNameDisplay.textContent = e.dataTransfer.files[0].name;
+      removeFileBtn.style.display = "inline-block";
+      enableTextArea(false);
+    }
+  });
+
+
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      fileNameDisplay.textContent = fileInput.files[0].name;
+      removeFileBtn.style.display = "inline-block";
+      enableTextArea(false);
+    } else {
+      clearFileSelection();
+    }
+  });
+
+  removeFileBtn.addEventListener('click', () => {
+    clearFileSelection();
+  });
+
+  resumeText.addEventListener('input', () => {
+    if (resumeText.value.trim().length > 0) {
+      fileInput.disabled = true;
+      fileNameDisplay.textContent = "Disabled (text entered)";
+      removeFileBtn.style.display = "none";
+    } else {
+      fileInput.disabled = false;
+      fileNameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : "No file selected";
+      if (fileInput.files.length > 0) {
+        removeFileBtn.style.display = "inline-block";
+      }
+    }
+  });
+  </script>
+  <script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const parsedSummary = document.getElementById("parsedSummary");
+    if (parsedSummary) {
+      // Use a slight delay to let the DOM render before animating
+      setTimeout(() => {
+        parsedSummary.classList.add("show");
+      }, 100); // 100ms delay for smooth entry
+    }
+  });
+  </script>
+</body>
+</html>
